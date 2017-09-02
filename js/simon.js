@@ -1,6 +1,10 @@
 var KEYS = ['c', 'd', 'e', 'f'];
 var NOTE_DURATION = 1000;
 
+// Array of notes waiting to be played after 2.5 secs
+var NOTES = [];
+var lastTime = Date.now();
+var timerId = -1;
 // NoteBox
 //
 // Acts as an interface to the coloured note boxes on the page, exposing methods
@@ -20,7 +24,36 @@ function NoteBox(key, onClick) {
 	var playing = 0;
 
 	this.key = key;
-	this.onClick = onClick || function () {};
+	this.onClick = function (key) {
+    if (lastTime > Date.now() - 2500 && timerId != -1) {
+      clearTimeout(timerId);
+      timerId = -1;
+    }
+
+    this.delay = NOTES.length === 0 ? 0 : Date.now() - lastTime;
+    NOTES.push(this);
+    lastTime = Date.now();
+    timerId = setTimeout(() => {
+      var totalDuration = NOTES.length * NOTE_DURATION;
+      for (var i = 0; i < NOTES.length; i++){
+        NOTES[i].disable();
+        totalDuration += NOTES[i].delay;
+      }
+      setTimeout(function() {
+        for (var i = 0; i < NOTES.length; i++){
+          NOTES[i].enable();
+        }
+        NOTES.length = 0;
+      }, totalDuration);
+
+      var cumulativeDelay = 0;
+      for (var i = 0; i < NOTES.length; i++){
+        cumulativeDelay += NOTES[i].delay;
+        setTimeout(NOTES[i].play, (i * NOTE_DURATION) + cumulativeDelay);
+      }
+      timerId = -1;
+    }, 2500);
+  };
 
 	// Plays the audio associated with this NoteBox
 	this.play = function () {
@@ -50,27 +83,35 @@ function NoteBox(key, onClick) {
 	}
 
 	// Call this NoteBox's clickHandler and play the note.
-	this.clickHandler = function () {
-		if (!enabled) return;
-
-		this.onClick(this.key)
-		this.play()
-	}.bind(this)
+	this.clickHandler = () => {
+    console.log(enabled);
+		if (!enabled) {
+      console.log('WAIT');
+      return;
+    }
+    this.onClick(this.key)
+		//this.play()
+	};
 
 	boxEl.addEventListener('mousedown', this.clickHandler);
 }
+
+
 
 // Example usage of NoteBox.
 //
 // This will create a map from key strings (i.e. 'c') to NoteBox objects so that
 // clicking the corresponding boxes on the page will play the NoteBox's audio.
 // It will also demonstrate programmatically playing notes by calling play directly.
+
 var notes = {};
 
 KEYS.forEach(function (key) {
 	notes[key] = new NoteBox(key);
 });
 
-KEYS.concat(KEYS.slice().reverse()).forEach(function(key, i) {
-	setTimeout(notes[key].play.bind(null, key), i * NOTE_DURATION);
-});
+
+// KEYS.concat(KEYS.slice().reverse()).forEach(function(key, i) {
+// 	setTimeout(notes[key].play, i * NOTE_DURATION);
+// });
+
