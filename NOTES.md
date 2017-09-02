@@ -1,5 +1,9 @@
 # Simon (Easy Task) | NOTES
 
+## CLARIFICATION
+
+*We disable the notes when notes are echoing back. Therefore clicking on the notes while the notes are still playing will result in no effects.*
+
 ## Difficulties
 
 1. Although I have had experience with JavaScript before, I have never used it in an object oriented way. Therefore clarifying the concept was definitely something I had to learn before I started coding.
